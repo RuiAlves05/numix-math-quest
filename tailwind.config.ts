@@ -43,6 +43,12 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        rank: {
+          madeira: "hsl(var(--rank-madeira))",
+          bronze: "hsl(var(--rank-bronze))",
+          prata: "hsl(var(--rank-prata))",
+          ouro: "hsl(var(--rank-ouro))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getRank, getYearName } from "@/lib/ranks";
+import { MathTutor } from "@/components/MathTutor";
 
 interface Question {
   id: string;
@@ -27,7 +29,9 @@ const Quiz = () => {
   const [userLevel, setUserLevel] = useState(1);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const requestedLevel = (location.state as any)?.level as number | undefined;
 
   useEffect(() => {
     loadQuiz();
@@ -42,22 +46,23 @@ const Quiz = () => {
         return;
       }
 
-      // Get user's current level
+      // Get user's max unlocked level
       const { data: progressData } = await supabase
         .from("user_progress")
         .select("current_level")
         .eq("user_id", session.user.id)
         .single();
 
-      const level = progressData?.current_level || 1;
+      const maxLevel = progressData?.current_level || 1;
+      const level = requestedLevel && requestedLevel <= maxLevel ? requestedLevel : maxLevel;
       setUserLevel(level);
 
-      // Fetch questions for the user's level
+      // Fetch questions for the chosen level
       const { data: questionsData, error } = await supabase
         .from("questions")
         .select("*")
         .eq("difficulty_level", level)
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
 
@@ -146,17 +151,38 @@ const Quiz = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      // Quiz completed
-      toast({
-        title: "Quiz Completo!",
-        description: `Ganhaste ${score} pontos!`,
-      });
+      // Quiz completed - check if user should level up
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const correctCount = questions.filter((q, i) => i < questions.length).length; // placeholder
+          // Re-fetch to get accurate progress
+          const { data: progressData } = await supabase
+            .from("user_progress")
+            .select("current_level")
+            .eq("user_id", session.user.id)
+            .single();
+          const maxUnlocked = progressData?.current_level || 1;
+          // Level up if user passed at least 7/10 on their max unlocked level and there is a next level
+          const passed = score >= questions.reduce((s, q) => s + q.points, 0) * 0.7;
+          if (passed && userLevel === maxUnlocked && userLevel < 4) {
+            const nextLevel = userLevel + 1;
+            await supabase.from("user_progress").update({ current_level: nextLevel }).eq("user_id", session.user.id);
+            await supabase.from("profiles").update({ level: nextLevel }).eq("user_id", session.user.id);
+            toast({ title: "🎉 Subiste de Rank!", description: `Desbloqueaste o nível ${getRank(nextLevel).name}!` });
+          } else {
+            toast({ title: "Quiz Completo!", description: `Ganhaste ${score} pontos!` });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
       navigate("/dashboard");
     }
   };
@@ -216,6 +242,14 @@ const Quiz = () => {
             <span className="font-medium">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} />
+        </div>
+
+        {/* Rank pill */}
+        <div className="mb-4 flex items-center justify-between">
+          <span className={cn("text-sm font-bold px-4 py-1.5 rounded-full border-2", getRank(userLevel).bgClass, getRank(userLevel).borderClass, getRank(userLevel).colorClass)}>
+            {getRank(userLevel).emoji} {getRank(userLevel).name} · {getYearName(userLevel)}
+          </span>
+          <MathTutor level={userLevel} questionContext={questions[currentQuestionIndex]?.question_text} triggerLabel="Tutor AI" />
         </div>
 
         {/* Question Card */}
