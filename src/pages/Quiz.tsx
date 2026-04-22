@@ -46,22 +46,23 @@ const Quiz = () => {
         return;
       }
 
-      // Get user's current level
+      // Get user's max unlocked level
       const { data: progressData } = await supabase
         .from("user_progress")
         .select("current_level")
         .eq("user_id", session.user.id)
         .single();
 
-      const level = progressData?.current_level || 1;
+      const maxLevel = progressData?.current_level || 1;
+      const level = requestedLevel && requestedLevel <= maxLevel ? requestedLevel : maxLevel;
       setUserLevel(level);
 
-      // Fetch questions for the user's level
+      // Fetch questions for the chosen level
       const { data: questionsData, error } = await supabase
         .from("questions")
         .select("*")
         .eq("difficulty_level", level)
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
 
