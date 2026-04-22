@@ -5,8 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Star, Flame, BookOpen, LogOut } from "lucide-react";
+import { Trophy, Star, Flame, BookOpen, LogOut, Lock } from "lucide-react";
 import logoImage from "@/assets/img.png";
+import { getRank, getYearName, RANKS } from "@/lib/ranks";
+import { ErrorAnalysis } from "@/components/ErrorAnalysis";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   username: string;
@@ -77,10 +80,8 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const getLevelName = (level: number) => {
-    const levels = ["1º Ano", "2º Ano", "3º Ano", "4º Ano"];
-    return levels[level - 1] || "1º Ano";
-  };
+  const getLevelName = getYearName;
+  const userMaxLevel = profile?.level || 1;
 
   if (loading) {
     return (
