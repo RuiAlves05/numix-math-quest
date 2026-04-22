@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Brain, Star, Trophy, Zap } from "lucide-react";
-import heroImage from "@/assets/numix-hero.jpg";
-import logoImage from "@/assets/numix-logo.png";
+import heroImage from "@/assets/img_1.png";
+import logoImage from "@/assets/img.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -125,7 +125,7 @@ const Index = () => {
             Pronto para Começar a Aventura?
           </h3>
           <p className="text-xl text-muted-foreground">
-            Junta-te a milhares de alunos que já melhoraram as suas notas de matemática!
+            Junta-te a nós e melhora as tuas notas de matemática!
           </p>
           <Button 
             onClick={() => navigate("/auth")} 

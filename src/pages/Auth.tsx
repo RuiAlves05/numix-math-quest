@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import logoImage from "@/assets/numix-logo.png";
+import logoImage from "@/assets/img.png";
 
 const Auth = () => {
   const [email, setEmail] = useState("");

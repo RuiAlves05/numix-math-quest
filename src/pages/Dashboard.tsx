@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Star, Flame, BookOpen, LogOut } from "lucide-react";
-import logoImage from "@/assets/numix-logo.png";
+import logoImage from "@/assets/img.png";
 
 interface Profile {
   username: string;
