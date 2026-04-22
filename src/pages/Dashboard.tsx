@@ -200,38 +200,39 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <Card className="border-primary/20 cursor-pointer hover:border-primary transition-colors" onClick={() => navigate("/quiz")}>
-            <CardContent className="pt-6 text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <BookOpen className="w-8 h-8 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-2">Começar Quiz</h3>
-                <p className="text-muted-foreground text-sm">
-                  Responde a perguntas do teu nível e ganha pontos!
-                </p>
-              </div>
-              <Button className="w-full">Praticar Agora</Button>
-            </CardContent>
-          </Card>
+        {/* Level Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Escolhe o Teu Nível</CardTitle>
+            <CardDescription>Conquista cada rank para desbloquear o seguinte!</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((lvl) => {
+                const rank = RANKS[lvl];
+                const unlocked = lvl <= userMaxLevel;
+                return (
+                  <button
+                    key={lvl}
+                    disabled={!unlocked}
+                    onClick={() => navigate("/quiz", { state: { level: lvl } })}
+                    className={cn(
+                      "p-4 rounded-2xl border-2 transition-all text-center",
+                      unlocked ? `${rank.borderClass} ${rank.bgClass} hover:scale-105 cursor-pointer` : "border-muted bg-muted/30 opacity-60 cursor-not-allowed"
+                    )}
+                  >
+                    <div className="text-4xl mb-2">{unlocked ? rank.emoji : "🔒"}</div>
+                    <div className={cn("font-bold text-sm", unlocked ? rank.colorClass : "text-muted-foreground")}>{rank.name}</div>
+                    <div className="text-xs text-muted-foreground">{getYearName(lvl)}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="border-muted cursor-not-allowed opacity-60">
-            <CardContent className="pt-6 text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
-                <Trophy className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-2">Desafios Especiais</h3>
-                <p className="text-muted-foreground text-sm">
-                  Em breve! Desafios únicos e recompensas exclusivas.
-                </p>
-              </div>
-              <Button className="w-full" disabled>Em Breve</Button>
-            </CardContent>
-          </Card>
-        </div>
+        {/* AI Error Analysis */}
+        <ErrorAnalysis />
       </main>
     </div>
   );
