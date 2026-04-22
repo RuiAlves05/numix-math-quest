@@ -44,23 +44,41 @@ const Dashboard = () => {
         return;
       }
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
+      // Fetch profile (auto-create if missing)
+      let { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (profileError) throw profileError;
+      if (!profileData) {
+        const username =
+          (session.user.user_metadata as any)?.username ||
+          session.user.email?.split("@")[0] ||
+          "Aluno";
+        const { data: created } = await supabase
+          .from("profiles")
+          .insert({ user_id: session.user.id, username, level: 1, total_points: 0, streak_days: 0 })
+          .select()
+          .single();
+        profileData = created;
+      }
 
-      // Fetch progress
-      const { data: progressData, error: progressError } = await supabase
+      // Fetch progress (auto-create if missing)
+      let { data: progressData } = await supabase
         .from("user_progress")
         .select("*")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (progressError) throw progressError;
+      if (!progressData) {
+        const { data: created } = await supabase
+          .from("user_progress")
+          .insert({ user_id: session.user.id, current_level: 1, questions_completed: 0, current_streak: 0 })
+          .select()
+          .single();
+        progressData = created;
+      }
 
       setProfile(profileData);
       setProgress(progressData);
