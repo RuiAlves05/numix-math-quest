@@ -135,15 +135,15 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-secondary/20">
+          <Card className={cn("border-2", getRank(profile?.level || 1).borderClass)}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
-                  <Star className="w-6 h-6 text-secondary" />
+                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-2xl", getRank(profile?.level || 1).bgClass)}>
+                  {getRank(profile?.level || 1).emoji}
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{getLevelName(profile?.level || 1)}</p>
-                  <p className="text-sm text-muted-foreground">Nível</p>
+                  <p className={cn("text-2xl font-bold", getRank(profile?.level || 1).colorClass)}>{getRank(profile?.level || 1).name}</p>
+                  <p className="text-sm text-muted-foreground">{getLevelName(profile?.level || 1)}</p>
                 </div>
               </div>
             </CardContent>
