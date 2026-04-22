@@ -29,7 +29,9 @@ const Quiz = () => {
   const [userLevel, setUserLevel] = useState(1);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const requestedLevel = (location.state as any)?.level as number | undefined;
 
   useEffect(() => {
     loadQuiz();
