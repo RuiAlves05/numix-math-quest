@@ -55,7 +55,10 @@ const Quiz = () => {
         .eq("user_id", session.user.id)
         .single();
 
-      const maxLevel = progressData?.current_level || 1;
+      const maxLevel = Math.max(
+        progressData?.current_level || 1,
+        getLevelFromCorrectAnswers(progressData?.questions_completed || 0),
+      );
       const level = requestedLevel && requestedLevel <= maxLevel ? requestedLevel : maxLevel;
       setUserLevel(level);
 
