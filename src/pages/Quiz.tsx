@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRank, getYearName } from "@/lib/ranks";
+import { getLevelFromCorrectAnswers, MAX_LEVEL } from "@/lib/progression";
 import { MathTutor } from "@/components/MathTutor";
 
 interface Question {
@@ -27,6 +28,7 @@ const Quiz = () => {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [userLevel, setUserLevel] = useState(1);
+  const [newlyUnlockedLevel, setNewlyUnlockedLevel] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,11 +51,14 @@ const Quiz = () => {
       // Get user's max unlocked level
       const { data: progressData } = await supabase
         .from("user_progress")
-        .select("current_level")
+        .select("current_level, questions_completed")
         .eq("user_id", session.user.id)
         .single();
 
-      const maxLevel = progressData?.current_level || 1;
+      const maxLevel = Math.max(
+        progressData?.current_level || 1,
+        getLevelFromCorrectAnswers(progressData?.questions_completed || 0),
+      );
       const level = requestedLevel && requestedLevel <= maxLevel ? requestedLevel : maxLevel;
       setUserLevel(level);
 
@@ -112,7 +117,7 @@ const Quiz = () => {
       });
 
       if (isCorrect) {
-        setScore(score + currentQuestion.points);
+        setScore((currentScore) => currentScore + currentQuestion.points);
 
         // Update user progress
         const { data: progressData } = await supabase
@@ -122,10 +127,18 @@ const Quiz = () => {
           .single();
 
         if (progressData) {
+          const previousUnlockedLevel = Math.max(
+            progressData.current_level || 1,
+            getLevelFromCorrectAnswers(progressData.questions_completed || 0),
+          );
+          const nextQuestionsCompleted = (progressData.questions_completed || 0) + 1;
+          const nextUnlockedLevel = getLevelFromCorrectAnswers(nextQuestionsCompleted);
+
           await supabase
             .from("user_progress")
             .update({
-              questions_completed: progressData.questions_completed + 1,
+              questions_completed: nextQuestionsCompleted,
+              current_level: Math.max(progressData.current_level || 1, nextUnlockedLevel),
             })
             .eq("user_id", session.user.id);
 
@@ -140,9 +153,14 @@ const Quiz = () => {
             await supabase
               .from("profiles")
               .update({
-                total_points: profileData.total_points + currentQuestion.points,
+                total_points: (profileData.total_points || 0) + currentQuestion.points,
+                level: Math.max(profileData.level || 1, nextUnlockedLevel),
               })
               .eq("user_id", session.user.id);
+          }
+
+          if (nextUnlockedLevel > previousUnlockedLevel && nextUnlockedLevel <= MAX_LEVEL) {
+            setNewlyUnlockedLevel(nextUnlockedLevel);
           }
         }
       }
@@ -157,28 +175,14 @@ const Quiz = () => {
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      // Quiz completed - check if user should level up
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const correctCount = questions.filter((q, i) => i < questions.length).length; // placeholder
-          // Re-fetch to get accurate progress
-          const { data: progressData } = await supabase
-            .from("user_progress")
-            .select("current_level")
-            .eq("user_id", session.user.id)
-            .single();
-          const maxUnlocked = progressData?.current_level || 1;
-          // Level up if user passed at least 7/10 on their max unlocked level and there is a next level
-          const passed = score >= questions.reduce((s, q) => s + q.points, 0) * 0.7;
-          if (passed && userLevel === maxUnlocked && userLevel < 4) {
-            const nextLevel = userLevel + 1;
-            await supabase.from("user_progress").update({ current_level: nextLevel }).eq("user_id", session.user.id);
-            await supabase.from("profiles").update({ level: nextLevel }).eq("user_id", session.user.id);
-            toast({ title: "🎉 Subiste de Rank!", description: `Desbloqueaste o nível ${getRank(nextLevel).name}!` });
-          } else {
-            toast({ title: "Quiz Completo!", description: `Ganhaste ${score} pontos!` });
-          }
+        if (newlyUnlockedLevel) {
+          toast({
+            title: "🎉 Novo nível desbloqueado!",
+            description: `Já podes jogar no nível ${getRank(newlyUnlockedLevel).name}.`,
+          });
+        } else {
+          toast({ title: "Quiz Completo!", description: `Ganhaste ${score} pontos!` });
         }
       } catch (e) {
         console.error(e);

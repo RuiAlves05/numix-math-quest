@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Trophy, Star, Flame, BookOpen, LogOut, Lock } from "lucide-react";
 import logoImage from "@/assets/img.png";
 import { getRank, getYearName, RANKS } from "@/lib/ranks";
+import { getLevelFromCorrectAnswers, getLevelProgress } from "@/lib/progression";
 import { ErrorAnalysis } from "@/components/ErrorAnalysis";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +81,26 @@ const Dashboard = () => {
         progressData = created;
       }
 
+      const derivedLevel = getLevelFromCorrectAnswers(progressData?.questions_completed || 0);
+
+      if ((progressData?.current_level || 1) < derivedLevel) {
+        await supabase
+          .from("user_progress")
+          .update({ current_level: derivedLevel })
+          .eq("user_id", session.user.id);
+
+        progressData = { ...progressData, current_level: derivedLevel };
+      }
+
+      if ((profileData?.level || 1) < derivedLevel) {
+        await supabase
+          .from("profiles")
+          .update({ level: derivedLevel })
+          .eq("user_id", session.user.id);
+
+        profileData = { ...profileData, level: derivedLevel };
+      }
+
       setProfile(profileData);
       setProgress(progressData);
     } catch (error: any) {
@@ -99,7 +120,9 @@ const Dashboard = () => {
   };
 
   const getLevelName = getYearName;
-  const userMaxLevel = profile?.level || 1;
+  const unlockedLevel = getLevelFromCorrectAnswers(progress?.questions_completed || 0);
+  const userMaxLevel = Math.max(profile?.level || 1, progress?.current_level || 1, unlockedLevel);
+  const progressState = getLevelProgress(progress?.questions_completed || 0, unlockedLevel);
 
   if (loading) {
     return (
@@ -153,15 +176,15 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className={cn("border-2", getRank(profile?.level || 1).borderClass)}>
+          <Card className={cn("border-2", getRank(userMaxLevel).borderClass)}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-2xl", getRank(profile?.level || 1).bgClass)}>
-                  {getRank(profile?.level || 1).emoji}
+                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-2xl", getRank(userMaxLevel).bgClass)}>
+                  {getRank(userMaxLevel).emoji}
                 </div>
                 <div>
-                  <p className={cn("text-2xl font-bold", getRank(profile?.level || 1).colorClass)}>{getRank(profile?.level || 1).name}</p>
-                  <p className="text-sm text-muted-foreground">{getLevelName(profile?.level || 1)}</p>
+                  <p className={cn("text-2xl font-bold", getRank(userMaxLevel).colorClass)}>{getRank(userMaxLevel).name}</p>
+                  <p className="text-sm text-muted-foreground">{getLevelName(userMaxLevel)}</p>
                 </div>
               </div>
             </CardContent>
@@ -205,30 +228,20 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(() => {
-              const completed = progress?.questions_completed || 0;
-              const isMaxLevel = (progress?.current_level || 1) >= 4;
-              const mod = completed % 10;
-              const inLevel = mod === 0 && completed > 0 ? 10 : mod;
-              const remaining = isMaxLevel ? 0 : 10 - inLevel;
-              const pct = isMaxLevel ? 100 : (inLevel / 10) * 100;
-              return (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Nível Atual</span>
-                    <span className="font-medium">{getLevelName(progress?.current_level || 1)}</span>
-                  </div>
-                  <Progress value={pct} />
-                  <p className="text-xs text-muted-foreground text-center">
-                    {isMaxLevel
-                      ? "Atingiste o nível máximo! 🏆"
-                      : remaining === 0
-                        ? "Nível completo! Pronto para subir 🚀"
-                        : `${remaining} perguntas para o próximo nível`}
-                  </p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Nível Atual</span>
+                  <span className="font-medium">{getLevelName(progressState.currentLevel)}</span>
                 </div>
-              );
-            })()}
+                <Progress value={progressState.progressPercentage} />
+                <p className="text-xs text-muted-foreground text-center">
+                  {progressState.isMaxLevel
+                    ? "Atingiste o nível máximo! 🏆"
+                    : progressState.remainingQuestions === 0
+                      ? "Nível desbloqueado! Pronto para avançar 🚀"
+                      : `${progressState.remainingQuestions} respostas certas para desbloquear o próximo nível`}
+                </p>
+              </div>
           </CardContent>
         </Card>
 
