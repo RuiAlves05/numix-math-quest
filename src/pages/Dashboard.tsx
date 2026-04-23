@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Trophy, Star, Flame, BookOpen, LogOut, Lock } from "lucide-react";
 import logoImage from "@/assets/img.png";
 import { getRank, getYearName, RANKS } from "@/lib/ranks";
+import { getLevelFromCorrectAnswers, getLevelProgress } from "@/lib/progression";
 import { ErrorAnalysis } from "@/components/ErrorAnalysis";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +100,9 @@ const Dashboard = () => {
   };
 
   const getLevelName = getYearName;
-  const userMaxLevel = profile?.level || 1;
+  const unlockedLevel = getLevelFromCorrectAnswers(progress?.questions_completed || 0);
+  const userMaxLevel = Math.max(profile?.level || 1, progress?.current_level || 1, unlockedLevel);
+  const progressState = getLevelProgress(progress?.questions_completed || 0, progress?.current_level || 1);
 
   if (loading) {
     return (
@@ -205,30 +208,20 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(() => {
-              const completed = progress?.questions_completed || 0;
-              const isMaxLevel = (progress?.current_level || 1) >= 4;
-              const mod = completed % 10;
-              const inLevel = mod === 0 && completed > 0 ? 10 : mod;
-              const remaining = isMaxLevel ? 0 : 10 - inLevel;
-              const pct = isMaxLevel ? 100 : (inLevel / 10) * 100;
-              return (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Nível Atual</span>
-                    <span className="font-medium">{getLevelName(progress?.current_level || 1)}</span>
-                  </div>
-                  <Progress value={pct} />
-                  <p className="text-xs text-muted-foreground text-center">
-                    {isMaxLevel
-                      ? "Atingiste o nível máximo! 🏆"
-                      : remaining === 0
-                        ? "Nível completo! Pronto para subir 🚀"
-                        : `${remaining} perguntas para o próximo nível`}
-                  </p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Nível Atual</span>
+                  <span className="font-medium">{getLevelName(progressState.currentLevel)}</span>
                 </div>
-              );
-            })()}
+                <Progress value={progressState.progressPercentage} />
+                <p className="text-xs text-muted-foreground text-center">
+                  {progressState.isMaxLevel
+                    ? "Atingiste o nível máximo! 🏆"
+                    : progressState.remainingQuestions === 0
+                      ? "Nível desbloqueado! Pronto para avançar 🚀"
+                      : `${progressState.remainingQuestions} respostas certas para desbloquear o próximo nível`}
+                </p>
+              </div>
           </CardContent>
         </Card>
 
