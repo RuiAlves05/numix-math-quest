@@ -51,7 +51,7 @@ const Quiz = () => {
       // Get user's max unlocked level
       const { data: progressData } = await supabase
         .from("user_progress")
-        .select("current_level")
+        .select("current_level, questions_completed")
         .eq("user_id", session.user.id)
         .single();
 
