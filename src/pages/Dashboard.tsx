@@ -84,7 +84,7 @@ const Dashboard = () => {
 
       setProfile(profileData);
       setProgress(progressData);
-      setStats((levelStats as LevelStat[]) || []);
+      setStats((levelStats as unknown as LevelStat[]) || []);
     } catch (error: any) {
       toast({ title: "Erro ao carregar dados", description: error.message, variant: "destructive" });
     } finally {
