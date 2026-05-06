@@ -16,9 +16,12 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
+          display_name: string | null
           id: string
           level: number | null
+          show_on_leaderboard: boolean
           streak_days: number | null
           total_points: number | null
           updated_at: string | null
@@ -26,9 +29,12 @@ export type Database = {
           username: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
+          display_name?: string | null
           id?: string
           level?: number | null
+          show_on_leaderboard?: boolean
           streak_days?: number | null
           total_points?: number | null
           updated_at?: string | null
@@ -36,9 +42,12 @@ export type Database = {
           username: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
+          display_name?: string | null
           id?: string
           level?: number | null
+          show_on_leaderboard?: boolean
           streak_days?: number | null
           total_points?: number | null
           updated_at?: string | null
@@ -83,28 +92,40 @@ export type Database = {
       user_answers: {
         Row: {
           answered_at: string | null
+          base_points: number | null
           id: string
           is_correct: boolean
+          level: number | null
+          multiplier: number | null
           points_earned: number | null
           question_id: string
+          streak_after_answer: number | null
           user_answer: string
           user_id: string
         }
         Insert: {
           answered_at?: string | null
+          base_points?: number | null
           id?: string
           is_correct: boolean
+          level?: number | null
+          multiplier?: number | null
           points_earned?: number | null
           question_id: string
+          streak_after_answer?: number | null
           user_answer: string
           user_id: string
         }
         Update: {
           answered_at?: string | null
+          base_points?: number | null
           id?: string
           is_correct?: boolean
+          level?: number | null
+          multiplier?: number | null
           points_earned?: number | null
           question_id?: string
+          streak_after_answer?: number | null
           user_answer?: string
           user_id?: string
         }
@@ -117,6 +138,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_level_stats: {
+        Row: {
+          best_streak: number
+          correct_answers: number
+          created_at: string
+          current_streak: number
+          id: string
+          level: number
+          points: number
+          total_answers: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_streak?: number
+          correct_answers?: number
+          created_at?: string
+          current_streak?: number
+          id?: string
+          level: number
+          points?: number
+          total_answers?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_streak?: number
+          correct_answers?: number
+          created_at?: string
+          current_streak?: number
+          id?: string
+          level?: number
+          points?: number
+          total_answers?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_progress: {
         Row: {
@@ -153,7 +213,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_leaderboard: {
+        Args: { _level: number; _limit?: number }
+        Returns: {
+          avatar_url: string
+          best_streak: number
+          correct_answers: number
+          display_name: string
+          points: number
+          rank: number
+          total_answers: number
+          user_id: string
+        }[]
+      }
+      submit_answer: {
+        Args: { _question_id: string; _user_answer: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
