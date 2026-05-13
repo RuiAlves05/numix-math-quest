@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Flame, BookOpen, LogOut, Medal } from "lucide-react";
+import { Trophy, Flame, BookOpen, LogOut, Medal, Users } from "lucide-react";
 import logoImage from "@/assets/img.png";
 import { getRank, getYearName, RANKS } from "@/lib/ranks";
 import { getLevelFromCorrectAnswers, getLevelProgress } from "@/lib/progression";
@@ -113,6 +113,9 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold text-primary">Numix</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button onClick={() => navigate("/social")} variant="outline" size="sm">
+              <Users className="w-4 h-4 mr-2" />Social
+            </Button>
             {userId && <ProfileSettings userId={userId} onSaved={checkUser} />}
             <Button onClick={handleSignOut} variant="outline" size="sm">
               <LogOut className="w-4 h-4 mr-2" />Sair
