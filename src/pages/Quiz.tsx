@@ -16,7 +16,6 @@ import { MathTutor } from "@/components/MathTutor";
 interface Question {
   id: string;
   question_text: string;
-  correct_answer: string;
   options: string[];
   difficulty_level: number;
   category: string;
