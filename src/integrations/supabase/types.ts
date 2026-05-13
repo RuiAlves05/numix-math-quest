@@ -14,6 +14,206 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          blocked_at: string | null
+          created_at: string
+          deleted_for_user_one_at: string | null
+          deleted_for_user_two_at: string | null
+          id: string
+          status: string
+          updated_at: string
+          user_one_id: string
+          user_two_id: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          created_at?: string
+          deleted_for_user_one_at?: string | null
+          deleted_for_user_two_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_one_id: string
+          user_two_id: string
+        }
+        Update: {
+          blocked_at?: string | null
+          created_at?: string
+          deleted_for_user_one_at?: string | null
+          deleted_for_user_two_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_one_id?: string
+          user_two_id?: string
+        }
+        Relationships: []
+      }
+      friend_requests: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      friendship_actions: {
+        Row: {
+          action_type: string
+          actor_id: string
+          can_undo: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          previous_state: Json | null
+          target_id: string
+          undone_at: string | null
+        }
+        Insert: {
+          action_type: string
+          actor_id: string
+          can_undo?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          previous_state?: Json | null
+          target_id: string
+          undone_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor_id?: string
+          can_undo?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          previous_state?: Json | null
+          target_id?: string
+          undone_at?: string | null
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_used_at: string | null
+          created_at: string
+          data: Json | null
+          expires_at: string | null
+          id: string
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_used_at?: string | null
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_used_at?: string | null
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -139,6 +339,27 @@ export type Database = {
           },
         ]
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_level_stats: {
         Row: {
           best_streak: number
@@ -213,6 +434,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
+      _is_blocked_either: { Args: { _a: string; _b: string }; Returns: boolean }
+      block_user: { Args: { _target: string }; Returns: Json }
+      get_blocked_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          blocked_at: string
+          display_name: string
+          user_id: string
+        }[]
+      }
+      get_conversation_messages: {
+        Args: { _conversation_id: string }
+        Returns: {
+          body: string
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          read_at: string | null
+          sender_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_friends: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          best_streak: number
+          display_name: string
+          total_points: number
+          user_id: string
+        }[]
+      }
       get_leaderboard: {
         Args: { _level: number; _limit?: number }
         Returns: {
@@ -226,10 +487,77 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_mailbox: {
+        Args: never
+        Returns: {
+          action_used_at: string | null
+          created_at: string
+          data: Json | null
+          expires_at: string | null
+          id: string
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_or_create_conversation: { Args: { _friend: string }; Returns: Json }
+      list_conversations: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          conversation_id: string
+          friend_id: string
+          friend_name: string
+          last_message: string
+          last_message_at: string
+          status: string
+          unread_count: number
+        }[]
+      }
+      mark_conversation_read: {
+        Args: { _conversation_id: string }
+        Returns: undefined
+      }
+      mark_notification_read: {
+        Args: { _notification_id: string }
+        Returns: undefined
+      }
+      remove_friend: { Args: { _friend: string }; Returns: Json }
+      respond_friend_request: {
+        Args: { _action: string; _request_id: string }
+        Returns: Json
+      }
+      search_users: {
+        Args: { _term: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          relation_state: string
+          request_id: string
+          total_points: number
+          user_id: string
+        }[]
+      }
+      send_friend_request: { Args: { _target: string }; Returns: Json }
+      send_message: {
+        Args: { _body: string; _conversation_id: string }
+        Returns: Json
+      }
       submit_answer: {
         Args: { _question_id: string; _user_answer: string }
         Returns: Json
       }
+      unblock_user: { Args: { _target: string }; Returns: Json }
+      undo_block_user: { Args: { _action_id: string }; Returns: Json }
+      undo_remove_friend: { Args: { _action_id: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
