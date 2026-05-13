@@ -21,8 +21,12 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Não autenticado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Fetch wrong answers with question details
-    const { data: wrongAnswers, error } = await supabase
+    // Use service role to read correct_answer (column-level access is restricted for normal roles)
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    // Fetch wrong answers with question details (scoped to authenticated user)
+    const { data: wrongAnswers, error } = await adminClient
       .from("user_answers")
       .select("user_answer, is_correct, question_id, questions:question_id(question_text, correct_answer, category, difficulty_level)")
       .eq("user_id", user.id)

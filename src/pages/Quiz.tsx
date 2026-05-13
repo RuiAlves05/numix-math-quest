@@ -16,7 +16,6 @@ import { MathTutor } from "@/components/MathTutor";
 interface Question {
   id: string;
   question_text: string;
-  correct_answer: string;
   options: string[];
   difficulty_level: number;
   category: string;
@@ -87,7 +86,7 @@ const Quiz = () => {
 
       const { data: questionsData, error } = await supabase
         .from("questions")
-        .select("*")
+        .select("id, question_text, options, difficulty_level, category, points")
         .eq("difficulty_level", level)
         .limit(10);
 
@@ -256,7 +255,7 @@ const Quiz = () => {
           <CardContent className="space-y-3">
             {currentQuestion.options.map((option, index) => {
               const isSelected = selectedAnswer === option;
-              const correctAnswer = lastResult?.correct_answer ?? currentQuestion.correct_answer;
+              const correctAnswer = lastResult?.correct_answer;
               const isCorrect = option === correctAnswer;
               const showCorrect = showResult && isCorrect;
               const showWrong = showResult && isSelected && !isCorrect;
