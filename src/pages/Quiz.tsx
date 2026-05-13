@@ -255,7 +255,7 @@ const Quiz = () => {
           <CardContent className="space-y-3">
             {currentQuestion.options.map((option, index) => {
               const isSelected = selectedAnswer === option;
-              const correctAnswer = lastResult?.correct_answer ?? currentQuestion.correct_answer;
+              const correctAnswer = lastResult?.correct_answer;
               const isCorrect = option === correctAnswer;
               const showCorrect = showResult && isCorrect;
               const showWrong = showResult && isSelected && !isCorrect;
