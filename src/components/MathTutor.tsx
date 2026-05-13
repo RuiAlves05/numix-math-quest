@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Sparkles, Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Msg {
   role: "user" | "assistant";
