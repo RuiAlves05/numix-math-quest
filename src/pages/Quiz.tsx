@@ -86,7 +86,7 @@ const Quiz = () => {
 
       const { data: questionsData, error } = await supabase
         .from("questions")
-        .select("*")
+        .select("id, question_text, options, difficulty_level, category, points")
         .eq("difficulty_level", level)
         .limit(10);
 
