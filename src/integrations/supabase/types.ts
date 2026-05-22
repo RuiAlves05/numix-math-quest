@@ -180,6 +180,7 @@ export type Database = {
           action_used_at: string | null
           created_at: string
           data: Json | null
+          deleted_at: string | null
           expires_at: string | null
           id: string
           message: string
@@ -192,6 +193,7 @@ export type Database = {
           action_used_at?: string | null
           created_at?: string
           data?: Json | null
+          deleted_at?: string | null
           expires_at?: string | null
           id?: string
           message: string
@@ -204,6 +206,7 @@ export type Database = {
           action_used_at?: string | null
           created_at?: string
           data?: Json | null
+          deleted_at?: string | null
           expires_at?: string | null
           id?: string
           message?: string
@@ -286,6 +289,51 @@ export type Database = {
           options?: string[]
           points?: number | null
           question_text?: string
+        }
+        Relationships: []
+      }
+      tutor_error_memory: {
+        Row: {
+          cleared_at: string | null
+          created_at: string
+          error_category: string | null
+          error_type: string
+          id: string
+          is_active: boolean
+          last_seen_at: string
+          level: number | null
+          occurrence_count: number
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cleared_at?: string | null
+          created_at?: string
+          error_category?: string | null
+          error_type: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          level?: number | null
+          occurrence_count?: number
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cleared_at?: string | null
+          created_at?: string
+          error_category?: string | null
+          error_type?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          level?: number | null
+          occurrence_count?: number
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -437,6 +485,18 @@ export type Database = {
       _are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       _is_blocked_either: { Args: { _a: string; _b: string }; Returns: boolean }
       block_user: { Args: { _target: string }; Returns: Json }
+      cancel_friend_request: { Args: { _request_id: string }; Returns: Json }
+      clear_all_tutor_memory: { Args: never; Returns: undefined }
+      clear_tutor_error: { Args: { _memory_id: string }; Returns: undefined }
+      clear_tutor_error_by_type: {
+        Args: { _error_type: string; _level?: number; _topic?: string }
+        Returns: undefined
+      }
+      delete_all_notifications: { Args: never; Returns: undefined }
+      delete_notification: {
+        Args: { _notification_id: string }
+        Returns: undefined
+      }
       get_blocked_users: {
         Args: never
         Returns: {
@@ -463,6 +523,19 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_conversation_messages_with_profiles: {
+        Args: { _conversation_id: string }
+        Returns: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string
+          sender_avatar_url: string
+          sender_display_name: string
+          sender_id: string
+        }[]
       }
       get_friends: {
         Args: never
@@ -493,6 +566,7 @@ export type Database = {
           action_used_at: string | null
           created_at: string
           data: Json | null
+          deleted_at: string | null
           expires_at: string | null
           id: string
           message: string
@@ -509,6 +583,29 @@ export type Database = {
         }
       }
       get_or_create_conversation: { Args: { _friend: string }; Returns: Json }
+      get_tutor_error_memory: {
+        Args: never
+        Returns: {
+          cleared_at: string | null
+          created_at: string
+          error_category: string | null
+          error_type: string
+          id: string
+          is_active: boolean
+          last_seen_at: string
+          level: number | null
+          occurrence_count: number
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "tutor_error_memory"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_conversations: {
         Args: never
         Returns: {
@@ -522,6 +619,20 @@ export type Database = {
           unread_count: number
         }[]
       }
+      list_friend_requests: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          direction: string
+          display_name: string
+          expires_at: string
+          id: string
+          other_user_id: string
+          status: string
+        }[]
+      }
+      mark_all_notifications_read: { Args: never; Returns: undefined }
       mark_conversation_read: {
         Args: { _conversation_id: string }
         Returns: undefined
@@ -558,6 +669,16 @@ export type Database = {
       unblock_user: { Args: { _target: string }; Returns: Json }
       undo_block_user: { Args: { _action_id: string }; Returns: Json }
       undo_remove_friend: { Args: { _action_id: string }; Returns: Json }
+      upsert_tutor_error_memory: {
+        Args: {
+          _category?: string
+          _error_type: string
+          _level: number
+          _topic: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
