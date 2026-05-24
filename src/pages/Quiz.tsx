@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle2, XCircle, Flame, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Flame, Zap, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRank, getYearName } from "@/lib/ranks";
 import { getLevelFromCorrectAnswers } from "@/lib/progression";
@@ -19,12 +19,15 @@ interface Question {
   options: string[];
   difficulty_level: number;
   category: string;
+  topic: string | null;
+  difficulty: string | null;
   points: number;
 }
 
 interface SubmitResult {
   correct: boolean;
   correct_answer: string;
+  explanation: string | null;
   points_earned: number;
   base_points: number;
   multiplier: number;
@@ -32,6 +35,7 @@ interface SubmitResult {
   best_streak: number;
   level: number;
   total_level_points: number;
+  topic: string | null;
 }
 
 const Quiz = () => {
@@ -50,17 +54,12 @@ const Quiz = () => {
   const { toast } = useToast();
   const requestedLevel = (location.state as any)?.level as number | undefined;
 
-  useEffect(() => {
-    loadQuiz();
-  }, []);
+  useEffect(() => { loadQuiz(); }, []);
 
   const loadQuiz = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      if (!session) { navigate("/auth"); return; }
 
       const { data: progressData } = await supabase
         .from("user_progress")
@@ -75,7 +74,6 @@ const Quiz = () => {
       const level = requestedLevel && requestedLevel <= maxLevel ? requestedLevel : maxLevel;
       setUserLevel(level);
 
-      // Load current streak for this level
       const { data: stats } = await supabase
         .from("user_level_stats" as any)
         .select("current_streak")
@@ -84,22 +82,14 @@ const Quiz = () => {
         .maybeSingle();
       setStreak((stats as any)?.current_streak || 0);
 
-      const { data: questionsData, error } = await supabase
-        .from("questions")
-        .select("id, question_text, options, difficulty_level, category, points")
-        .eq("difficulty_level", level)
-        .limit(10);
-
+      // Use server-side random selection (correct_answer NOT returned)
+      const { data: questionsData, error } = await supabase.rpc("get_random_quiz_questions" as any, { _level: level });
       if (error) throw error;
 
-      if (questionsData && questionsData.length > 0) {
-        setQuestions([...questionsData].sort(() => Math.random() - 0.5));
+      if (questionsData && (questionsData as any[]).length > 0) {
+        setQuestions(questionsData as unknown as Question[]);
       } else {
-        toast({
-          title: "Sem perguntas disponíveis",
-          description: "Não há perguntas para o teu nível.",
-          variant: "destructive",
-        });
+        toast({ title: "Sem perguntas disponíveis", description: "Não há perguntas para o teu nível.", variant: "destructive" });
       }
     } catch (error: any) {
       toast({ title: "Erro ao carregar quiz", description: error.message, variant: "destructive" });
@@ -131,17 +121,10 @@ const Quiz = () => {
         setScore((s) => s + res.points_earned);
         const prevTier = getStreakInfo(prevStreak).multiplier;
         if (res.multiplier > prevTier) {
-          toast({
-            title: "🔥 Multiplicador aumentado!",
-            description: `Agora ganhas ${res.multiplier}x pontos.`,
-          });
+          toast({ title: "🔥 Multiplicador aumentado!", description: `Agora ganhas ${res.multiplier}x pontos.` });
         }
       } else if (prevStreak >= 5) {
-        toast({
-          title: "💔 Streak perdida",
-          description: "Tenta começar uma nova sequência!",
-          variant: "destructive",
-        });
+        toast({ title: "💔 Streak perdida", description: "Tenta começar uma nova sequência!", variant: "destructive" });
       }
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
@@ -164,24 +147,15 @@ const Quiz = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center">
-        <p className="text-muted-foreground">A carregar quiz...</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center"><p className="text-muted-foreground">A carregar quiz...</p></div>;
   }
 
   if (questions.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center">
         <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Sem Perguntas</CardTitle>
-            <CardDescription>Não há perguntas disponíveis para o teu nível neste momento.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/dashboard")} className="w-full">Voltar ao Dashboard</Button>
-          </CardContent>
+          <CardHeader><CardTitle>Sem Perguntas</CardTitle><CardDescription>Não há perguntas disponíveis para o teu nível neste momento.</CardDescription></CardHeader>
+          <CardContent><Button onClick={() => navigate("/dashboard")} className="w-full">Voltar ao Dashboard</Button></CardContent>
         </Card>
       </div>
     );
@@ -197,13 +171,8 @@ const Quiz = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />Voltar
-          </Button>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Pontos</p>
-            <p className="text-2xl font-bold text-primary">{score}</p>
-          </div>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}><ArrowLeft className="w-4 h-4 mr-2" />Voltar</Button>
+          <div className="text-right"><p className="text-sm text-muted-foreground">Pontos</p><p className="text-2xl font-bold text-primary">{score}</p></div>
         </div>
 
         <div className="mb-6 space-y-2">
@@ -214,25 +183,18 @@ const Quiz = () => {
           <Progress value={progress} />
         </div>
 
-        {/* Streak panel */}
         <Card className="mb-4 border-accent/30 bg-accent/5">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2">
                 <Flame className={cn("w-5 h-5", streak >= 5 ? "text-accent" : "text-muted-foreground")} />
                 <span className="font-semibold">Streak: {streak}</span>
-                <Badge variant="secondary" className="gap-1">
-                  <Zap className="w-3 h-3" /> {streakInfo.multiplier}x
-                </Badge>
+                <Badge variant="secondary" className="gap-1"><Zap className="w-3 h-3" /> {streakInfo.multiplier}x</Badge>
               </div>
               <div className="text-xs text-muted-foreground">
-                {streakInfo.nextThreshold
-                  ? `Acerta mais ${streakInfo.toNext} para subir o multiplicador`
-                  : "Multiplicador máximo!"}
+                {streakInfo.nextThreshold ? `Acerta mais ${streakInfo.toNext} para subir o multiplicador` : "Multiplicador máximo!"}
               </div>
-              <div className="text-sm">
-                Esta vale <span className="font-bold text-primary">{possiblePoints}</span> pts
-              </div>
+              <div className="text-sm">Esta vale <span className="font-bold text-primary">{possiblePoints}</span> pts</div>
             </div>
           </CardContent>
         </Card>
@@ -261,18 +223,13 @@ const Quiz = () => {
               const showWrong = showResult && isSelected && !isCorrect;
 
               return (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className={cn(
-                    "w-full h-auto py-4 px-6 text-lg justify-start",
+                <Button key={index} variant="outline"
+                  className={cn("w-full h-auto py-4 px-6 text-lg justify-start",
                     showCorrect && "border-success bg-success/10 text-success",
                     showWrong && "border-destructive bg-destructive/10 text-destructive",
-                    isSelected && !showResult && "border-primary bg-primary/10"
-                  )}
+                    isSelected && !showResult && "border-primary bg-primary/10")}
                   onClick={() => handleAnswerSelect(option)}
-                  disabled={showResult || submitting}
-                >
+                  disabled={showResult || submitting}>
                   <span className="flex-1 text-left">{option}</span>
                   {showCorrect && <CheckCircle2 className="w-5 h-5 ml-2" />}
                   {showWrong && <XCircle className="w-5 h-5 ml-2" />}
@@ -284,13 +241,15 @@ const Quiz = () => {
               <div className="pt-4 space-y-3">
                 <div className="text-center text-sm text-muted-foreground">
                   {lastResult.correct ? (
-                    <>
-                      Ganhaste <span className="font-bold text-primary">{lastResult.points_earned}</span> pts ({lastResult.base_points} × {lastResult.multiplier})
-                    </>
-                  ) : (
-                    <>Resposta errada. Streak reiniciada.</>
-                  )}
+                    <>Ganhaste <span className="font-bold text-primary">{lastResult.points_earned}</span> pts ({lastResult.base_points} × {lastResult.multiplier})</>
+                  ) : (<>Resposta errada. Streak reiniciada.</>)}
                 </div>
+                {lastResult.explanation && (
+                  <div className="flex gap-2 items-start p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                    <Lightbulb className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <div><span className="font-semibold text-primary">Explicação: </span>{lastResult.explanation}</div>
+                  </div>
+                )}
                 <Button onClick={handleNext} className="w-full" size="lg">
                   {currentQuestionIndex < questions.length - 1 ? "Próxima Pergunta" : "Concluir Quiz"}
                 </Button>

@@ -8,9 +8,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Search, MessageCircle, UserMinus, Ban, UserPlus, Check, X, Mail, Loader2, Undo2 } from "lucide-react";
+import { ArrowLeft, Search, MessageCircle, UserMinus, Ban, UserPlus, Check, X, Loader2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/social/ConfirmDialog";
 import { PrivateChat } from "@/components/social/PrivateChat";
+import { Mailbox, type Notif } from "@/components/social/Mailbox";
+import { FriendRequests, type FriendReq } from "@/components/social/FriendRequests";
+import { BlockedUsers, type Blocked } from "@/components/social/BlockedUsers";
 
 const initial = (name: string) => (name?.trim()?.[0] || "U").toUpperCase();
 
@@ -22,17 +25,9 @@ interface Friend {
   user_id: string; display_name: string; avatar_url: string | null;
   total_points: number; best_streak: number;
 }
-interface Notif {
-  id: string; user_id: string; type: string; title: string; message: string;
-  data: any; read_at: string | null; expires_at: string | null;
-  action_used_at: string | null; created_at: string;
-}
 interface Conv {
   conversation_id: string; friend_id: string; friend_name: string; avatar_url: string | null;
   status: string; last_message: string | null; last_message_at: string | null; unread_count: number;
-}
-interface Blocked {
-  user_id: string; display_name: string; avatar_url: string | null; blocked_at: string;
 }
 
 const Social = () => {
@@ -42,7 +37,7 @@ const Social = () => {
   const [tab, setTab] = useState("friends");
 
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<FriendReq[]>([]);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [convs, setConvs] = useState<Conv[]>([]);
   const [blocked, setBlocked] = useState<Blocked[]>([]);
@@ -66,13 +61,13 @@ const Social = () => {
   const loadAll = useCallback(async () => {
     const [f, r, m, c, b] = await Promise.all([
       supabase.rpc("get_friends" as any),
-      supabase.from("friend_requests").select("*").eq("status", "pending").order("created_at", { ascending: false }),
+      supabase.rpc("list_friend_requests" as any),
       supabase.rpc("get_mailbox" as any),
       supabase.rpc("list_conversations" as any),
       supabase.rpc("get_blocked_users" as any),
     ]);
     setFriends((f.data as Friend[]) || []);
-    setRequests(r.data || []);
+    setRequests((r.data as FriendReq[]) || []);
     setNotifs((m.data as Notif[]) || []);
     setConvs((c.data as Conv[]) || []);
     setBlocked((b.data as Blocked[]) || []);
@@ -80,7 +75,6 @@ const Social = () => {
 
   useEffect(() => { if (meId) loadAll(); }, [meId, loadAll]);
 
-  // Realtime: notifications + friend_requests
   useEffect(() => {
     if (!meId) return;
     const ch = supabase
@@ -113,7 +107,7 @@ const Social = () => {
     const { error } = await supabase.rpc("respond_friend_request" as any, { _request_id: requestId, _action: action });
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: action === "accept" ? "Pedido aceite" : "Pedido recusado" });
-    loadAll();
+    doSearch(); loadAll();
   };
 
   const openConversation = async (friendId: string) => {
@@ -142,23 +136,8 @@ const Social = () => {
     loadAll();
   };
 
-  const undoAction = async (notif: Notif) => {
-    const actionId = notif.data?.action_id;
-    if (!actionId) return;
-    const fn = notif.type === "friend_removed_undo" ? "undo_remove_friend" : "undo_block_user";
-    const { error } = await supabase.rpc(fn as any, { _action_id: actionId });
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Ação revertida" });
-    loadAll();
-  };
-
-  const markRead = async (id: string) => {
-    await supabase.rpc("mark_notification_read" as any, { _notification_id: id });
-    loadAll();
-  };
-
   const unreadNotifs = notifs.filter((n) => !n.read_at).length;
-  const pendingRequests = requests.filter((r) => r.receiver_id === meId).length;
+  const pendingReceived = requests.filter((r) => r.direction === "received").length;
   const totalUnreadMsgs = convs.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
   const relationButton = (r: SearchResult) => {
@@ -184,14 +163,13 @@ const Social = () => {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full h-auto">
           <TabsTrigger value="friends">Amigos {friends.length > 0 && <Badge variant="secondary" className="ml-1">{friends.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="requests">Pedidos {pendingRequests > 0 && <Badge variant="default" className="ml-1">{pendingRequests}</Badge>}</TabsTrigger>
+          <TabsTrigger value="requests">Pedidos {pendingReceived > 0 && <Badge variant="default" className="ml-1">{pendingReceived}</Badge>}</TabsTrigger>
           <TabsTrigger value="mail">Correio {unreadNotifs > 0 && <Badge variant="default" className="ml-1">{unreadNotifs}</Badge>}</TabsTrigger>
           <TabsTrigger value="search">Pesquisar</TabsTrigger>
           <TabsTrigger value="chat">Chat {totalUnreadMsgs > 0 && <Badge variant="default" className="ml-1">{totalUnreadMsgs}</Badge>}</TabsTrigger>
           <TabsTrigger value="blocked">Bloqueados</TabsTrigger>
         </TabsList>
 
-        {/* AMIGOS */}
         <TabsContent value="friends" className="mt-4">
           <Card><CardHeader><CardTitle>Os teus amigos</CardTitle></CardHeader><CardContent>
             {friends.length === 0 ? <p className="text-muted-foreground text-center py-6">Ainda não tens amigos. Pesquisa jogadores para enviar pedidos.</p>
@@ -212,61 +190,14 @@ const Social = () => {
           </CardContent></Card>
         </TabsContent>
 
-        {/* PEDIDOS */}
         <TabsContent value="requests" className="mt-4">
-          <Card><CardHeader><CardTitle>Pedidos pendentes</CardTitle></CardHeader><CardContent>
-            {requests.length === 0 ? <p className="text-muted-foreground text-center py-6">Não tens pedidos pendentes.</p>
-            : <div className="space-y-2">{requests.map((r) => {
-                const isMine = r.sender_id === meId;
-                return (
-                  <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border">
-                    <Mail className="h-4 w-4" />
-                    <div className="flex-1 text-sm">
-                      {isMine ? `Pedido enviado a ${r.receiver_id.slice(0,8)}…` : `Pedido recebido de ${r.sender_id.slice(0,8)}…`}
-                      <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
-                    </div>
-                    {!isMine && <div className="flex gap-1">
-                      <Button size="sm" onClick={() => respond(r.id, "accept")}><Check className="h-4 w-4" /></Button>
-                      <Button size="sm" variant="outline" onClick={() => respond(r.id, "decline")}><X className="h-4 w-4" /></Button>
-                    </div>}
-                  </div>
-                );
-              })}</div>}
-          </CardContent></Card>
+          <FriendRequests requests={requests} onChange={loadAll} />
         </TabsContent>
 
-        {/* CORREIO */}
         <TabsContent value="mail" className="mt-4">
-          <Card><CardHeader><CardTitle>Correio interno</CardTitle></CardHeader><CardContent>
-            {notifs.length === 0 ? <p className="text-muted-foreground text-center py-6">Sem notificações.</p>
-            : <div className="space-y-2">{notifs.map((n) => {
-                const expired = n.expires_at && new Date(n.expires_at) < new Date();
-                const undoable = (n.type === "friend_removed_undo" || n.type === "friend_blocked_undo") && !n.action_used_at && !expired;
-                const reqId = n.type === "friend_request" ? n.data?.request_id : null;
-                return (
-                  <div key={n.id} className={`p-3 rounded-lg border ${!n.read_at ? "bg-primary/5 border-primary/30" : ""}`}>
-                    <div className="flex justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{n.title}</div>
-                        <div className="text-xs text-muted-foreground">{n.message}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleString()}</div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        {reqId && <div className="flex gap-1">
-                          <Button size="sm" onClick={() => respond(reqId, "accept")}><Check className="h-4 w-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => respond(reqId, "decline")}><X className="h-4 w-4" /></Button>
-                        </div>}
-                        {undoable && <Button size="sm" variant="outline" onClick={() => undoAction(n)}><Undo2 className="h-4 w-4 mr-1" />Reverter</Button>}
-                        {!n.read_at && <Button size="sm" variant="ghost" onClick={() => markRead(n.id)}>Marcar lida</Button>}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}</div>}
-          </CardContent></Card>
+          <Mailbox notifs={notifs} onChange={loadAll} />
         </TabsContent>
 
-        {/* PESQUISAR */}
         <TabsContent value="search" className="mt-4">
           <Card><CardHeader><CardTitle>Pesquisar jogadores</CardTitle></CardHeader><CardContent>
             <div className="flex gap-2 mb-4">
@@ -289,7 +220,6 @@ const Social = () => {
           </CardContent></Card>
         </TabsContent>
 
-        {/* CHAT */}
         <TabsContent value="chat" className="mt-4">
           {openChat ? (
             <PrivateChat conversationId={openChat.conversation_id} friendId={openChat.friend_id}
@@ -313,24 +243,8 @@ const Social = () => {
           )}
         </TabsContent>
 
-        {/* BLOQUEADOS */}
         <TabsContent value="blocked" className="mt-4">
-          <Card><CardHeader><CardTitle>Utilizadores bloqueados</CardTitle></CardHeader><CardContent>
-            {blocked.length === 0 ? <p className="text-muted-foreground text-center py-6">Não tens utilizadores bloqueados.</p>
-            : <div className="space-y-2">{blocked.map((b) => (
-                <div key={b.user_id} className="flex items-center gap-3 p-3 rounded-lg border">
-                  <Avatar>{b.avatar_url && <AvatarImage src={b.avatar_url} />}<AvatarFallback>{initial(b.display_name)}</AvatarFallback></Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{b.display_name}</div>
-                    <div className="text-xs text-muted-foreground">Bloqueado em {new Date(b.blocked_at).toLocaleDateString()}</div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => setConfirm({ kind: "unblock", user: { id: b.user_id, name: b.display_name } })}>Desbloquear</Button>
-                    <Button size="sm" onClick={() => sendRequest(b.user_id)}><UserPlus className="h-4 w-4 mr-1" />Pedir amizade</Button>
-                  </div>
-                </div>
-              ))}</div>}
-          </CardContent></Card>
+          <BlockedUsers blocked={blocked} onChange={loadAll} />
         </TabsContent>
       </Tabs>
 
