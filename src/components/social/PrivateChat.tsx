@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { ChatHeader } from "./ChatHeader";
+import { MessageBubble } from "./MessageBubble";
 
 interface Msg {
   id: string;
@@ -13,6 +13,9 @@ interface Msg {
   sender_id: string;
   body: string;
   created_at: string;
+  read_at: string | null;
+  sender_display_name: string;
+  sender_avatar_url: string | null;
 }
 
 interface Props {
@@ -25,8 +28,6 @@ interface Props {
   onBack: () => void;
 }
 
-const initial = (name: string) => (name?.trim()?.[0] || "U").toUpperCase();
-
 export const PrivateChat = ({ conversationId, friendId, friendName, friendAvatar, status, meId, onBack }: Props) => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [body, setBody] = useState("");
@@ -38,27 +39,27 @@ export const PrivateChat = ({ conversationId, friendId, friendName, friendAvatar
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.rpc("get_conversation_messages" as any, { _conversation_id: conversationId });
+    const { data, error } = await supabase.rpc("get_conversation_messages_with_profiles" as any, { _conversation_id: conversationId });
     if (!error) setMessages((data as Msg[]) || []);
     setLoading(false);
     await supabase.rpc("mark_conversation_read" as any, { _conversation_id: conversationId });
   };
 
-  useEffect(() => { load(); }, [conversationId]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [conversationId]);
 
   useEffect(() => {
     const ch = supabase
       .channel(`conv-${conversationId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
-        setMessages((prev) => [...prev, payload.new as Msg]);
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, () => {
+        // Re-fetch to get joined sender profile info reliably
+        load();
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages]);
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [messages]);
 
   const send = async () => {
     const text = body.trim();
@@ -72,30 +73,29 @@ export const PrivateChat = ({ conversationId, friendId, friendName, friendAvatar
   };
 
   return (
-    <div className="flex flex-col h-[70vh] border rounded-lg bg-card">
-      <div className="flex items-center gap-3 p-3 border-b">
-        <Button size="icon" variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4" /></Button>
-        <Avatar className="h-9 w-9">
-          {friendAvatar && <AvatarImage src={friendAvatar} />}
-          <AvatarFallback>{initial(friendName)}</AvatarFallback>
-        </Avatar>
-        <div className="font-semibold">{friendName}</div>
-      </div>
+    <div className="flex flex-col h-[70vh] border rounded-lg bg-card overflow-hidden">
+      <ChatHeader name={friendName} avatarUrl={friendAvatar} status={status} onBack={onBack} />
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : messages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">Sem mensagens ainda. Diz olá!</div>
-        ) : messages.map((m) => {
-          const mine = m.sender_id === meId;
+        ) : messages.map((m, i) => {
+          const isOwn = m.sender_id === meId;
+          const prev = messages[i - 1];
+          // Show sender info when first message in a run from this sender
+          const showSenderInfo = !prev || prev.sender_id !== m.sender_id;
           return (
-            <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-              <div className={cn("max-w-[75%] px-3 py-2 rounded-2xl text-sm", mine ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                {m.body}
-                <div className={cn("text-[10px] mt-1 opacity-70")}>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-              </div>
-            </div>
+            <MessageBubble
+              key={m.id}
+              body={m.body}
+              createdAt={m.created_at}
+              isOwn={isOwn}
+              showSenderInfo={showSenderInfo}
+              senderName={m.sender_display_name}
+              senderAvatar={m.sender_avatar_url}
+            />
           );
         })}
       </div>
@@ -106,7 +106,7 @@ export const PrivateChat = ({ conversationId, friendId, friendName, friendAvatar
         </div>
       )}
 
-      <div className="flex gap-2 p-3 border-t">
+      <div className="flex gap-2 p-3 border-t bg-card">
         <Input
           value={body}
           onChange={(e) => setBody(e.target.value)}
