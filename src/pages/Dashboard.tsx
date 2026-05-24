@@ -13,6 +13,7 @@ import { getLevelFromCorrectAnswers, getLevelProgress } from "@/lib/progression"
 import { ErrorAnalysis } from "@/components/ErrorAnalysis";
 import { Leaderboard } from "@/components/Leaderboard";
 import { ProfileSettings } from "@/components/ProfileSettings";
+import { TutorMemorySettings } from "@/components/tutor/TutorMemorySettings";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -112,10 +113,11 @@ const Dashboard = () => {
             <img src={logoImage} alt="Numix" className="w-12 h-12" />
             <h1 className="text-2xl font-bold text-primary">Numix</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={() => navigate("/social")} variant="outline" size="sm">
               <Users className="w-4 h-4 mr-2" />Social
             </Button>
+            <TutorMemorySettings />
             {userId && <ProfileSettings userId={userId} onSaved={checkUser} />}
             <Button onClick={handleSignOut} variant="outline" size="sm">
               <LogOut className="w-4 h-4 mr-2" />Sair
