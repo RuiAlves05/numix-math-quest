@@ -264,31 +264,46 @@ export type Database = {
           category: string
           correct_answer: string
           created_at: string | null
+          difficulty: string | null
           difficulty_level: number
+          explanation: string | null
           id: string
+          is_active: boolean
           options: string[]
           points: number | null
           question_text: string
+          school_year: number | null
+          topic: string | null
         }
         Insert: {
           category: string
           correct_answer: string
           created_at?: string | null
+          difficulty?: string | null
           difficulty_level: number
+          explanation?: string | null
           id?: string
+          is_active?: boolean
           options: string[]
           points?: number | null
           question_text: string
+          school_year?: number | null
+          topic?: string | null
         }
         Update: {
           category?: string
           correct_answer?: string
           created_at?: string | null
+          difficulty?: string | null
           difficulty_level?: number
+          explanation?: string | null
           id?: string
+          is_active?: boolean
           options?: string[]
           points?: number | null
           question_text?: string
+          school_year?: number | null
+          topic?: string | null
         }
         Relationships: []
       }
@@ -583,6 +598,20 @@ export type Database = {
         }
       }
       get_or_create_conversation: { Args: { _friend: string }; Returns: Json }
+      get_random_quiz_questions: {
+        Args: { _level: number }
+        Returns: {
+          category: string
+          difficulty: string
+          difficulty_level: number
+          id: string
+          options: string[]
+          points: number
+          question_text: string
+          school_year: number
+          topic: string
+        }[]
+      }
       get_tutor_error_memory: {
         Args: never
         Returns: {
