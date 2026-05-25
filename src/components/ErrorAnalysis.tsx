@@ -39,7 +39,7 @@ export const ErrorAnalysis = () => {
           Análise Inteligente de Erros
         </CardTitle>
         <CardDescription>
-          O tutor AI analisa as tuas respostas erradas e sugere áreas para melhorar.
+          Analisa os teus padrões de erro ativos. Podes apagar memórias específicas para deixarem de aparecer aqui.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
