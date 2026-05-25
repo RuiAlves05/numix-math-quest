@@ -101,8 +101,8 @@ export const TutorMemorySettings = ({ triggerLabel = "Memória da Análise" }: P
       <ConfirmDialog
         open={askClear}
         onOpenChange={(v) => !v && setAskClear(false)}
-        title="Limpar memória do tutor"
-        description="Apagar todos os erros memorizados? O tutor deixará de personalizar dicas com base no histórico, mas continuará a funcionar."
+        title="Limpar memória da análise"
+        description="Apagar todos os erros memorizados? A Análise Inteligente de Erros deixará de mostrar estes padrões. Os teus pontos, ranking e histórico não são afetados."
         destructive
         loading={busy}
         onConfirm={clearAll}
