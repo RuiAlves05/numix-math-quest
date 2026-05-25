@@ -21,37 +21,39 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Não autenticado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Use service role to read correct_answer (column-level access is restricted for normal roles)
-    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-    // Fetch wrong answers with question details (scoped to authenticated user)
-    const { data: wrongAnswers, error } = await adminClient
-      .from("user_answers")
-      .select("user_answer, is_correct, question_id, questions:question_id(question_text, correct_answer, category, difficulty_level)")
+    // Read active tutor memory entries (the user-controlled source of truth for analysis)
+    const { data: memory, error: memErr } = await supabase
+      .from("tutor_error_memory")
+      .select("error_type, error_category, level, topic, occurrence_count, last_seen_at")
       .eq("user_id", user.id)
-      .eq("is_correct", false)
-      .order("answered_at", { ascending: false })
+      .eq("is_active", true)
+      .is("cleared_at", null)
+      .order("occurrence_count", { ascending: false })
       .limit(50);
 
-    if (error) throw error;
+    if (memErr) throw memErr;
 
-    if (!wrongAnswers || wrongAnswers.length === 0) {
+    if (!memory || memory.length === 0) {
       return new Response(JSON.stringify({
-        analysis: "Ainda não tens erros para analisar! Continua a praticar e o tutor irá identificar áreas a melhorar. 🌟",
+        analysis: "Não existem erros ativos para analisar. Continua a praticar para a análise identificar novos padrões. 🌟",
         weakCategories: [],
         suggestions: [],
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Aggregate by category
+    // Aggregate by error_type
     const byCategory: Record<string, number> = {};
     const examples: any[] = [];
-    for (const a of wrongAnswers) {
-      const q: any = a.questions;
-      if (!q) continue;
-      byCategory[q.category] = (byCategory[q.category] || 0) + 1;
-      if (examples.length < 8) examples.push({ pergunta: q.question_text, resposta_certa: q.correct_answer, resposta_dada: a.user_answer, categoria: q.category });
+    for (const m of memory) {
+      const key = m.error_category || m.error_type;
+      byCategory[key] = (byCategory[key] || 0) + (m.occurrence_count || 1);
+      if (examples.length < 8) examples.push({
+        tipo_erro: m.error_type,
+        topico: m.topic,
+        categoria: m.error_category,
+        nivel: m.level,
+        vezes: m.occurrence_count,
+      });
     }
 
     const weakCategories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([cat, n]) => ({ category: cat, errors: n }));

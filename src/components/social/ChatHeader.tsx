@@ -12,8 +12,8 @@ interface Props {
 const initial = (n: string) => (n?.trim()?.[0] || "U").toUpperCase();
 
 export const ChatHeader = ({ name, avatarUrl, status, onBack }: Props) => {
-  const statusLabel = status === "active" ? "Online" : status === "blocked" ? "Conversa bloqueada" : "Já não são amigos";
-  const dotClass = status === "active" ? "bg-success" : "bg-muted-foreground";
+  const statusLabel = status === "active" ? "Conversa ativa" : status === "blocked" ? "Conversa bloqueada" : "Já não são amigos";
+  const dotClass = status === "active" ? "bg-primary" : "bg-muted-foreground";
   return (
     <div className="flex items-center gap-3 p-3 border-b bg-card/50 backdrop-blur">
       <Button size="icon" variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4" /></Button>
