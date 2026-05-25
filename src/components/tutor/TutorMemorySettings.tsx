@@ -21,7 +21,7 @@ interface Props {
   triggerLabel?: string;
 }
 
-export const TutorMemorySettings = ({ triggerLabel = "Gerir memória" }: Props) => {
+export const TutorMemorySettings = ({ triggerLabel = "Memória da Análise" }: Props) => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(false);
