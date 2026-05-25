@@ -169,7 +169,7 @@ const Dashboard = () => {
                 const rank = RANKS[lvl];
                 const unlocked = lvl <= userMaxLevel;
                 return (
-                  <button key={lvl} disabled={!unlocked} onClick={() => navigate("/quiz", { state: { level: lvl } })}
+                  <button key={lvl} disabled={!unlocked} onClick={() => navigate(`/quiz/${lvl}`)}
                     className={cn("p-4 rounded-2xl border-2 transition-all text-center", unlocked ? `${rank.borderClass} ${rank.bgClass} hover:scale-105 cursor-pointer` : "border-muted bg-muted/30 opacity-60 cursor-not-allowed")}>
                     <div className="text-4xl mb-2">{unlocked ? rank.emoji : "🔒"}</div>
                     <div className={cn("font-bold text-sm", unlocked ? rank.colorClass : "text-muted-foreground")}>{rank.name}</div>
