@@ -64,9 +64,9 @@ export const TutorMemorySettings = ({ triggerLabel = "Memória da Análise" }: P
         </SheetTrigger>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Memória do Tutor</SheetTitle>
+            <SheetTitle>Memória da Análise de Erros</SheetTitle>
             <SheetDescription>
-              O tutor lembra-se dos teus erros recorrentes para te dar dicas mais úteis. Podes limpar individualmente ou tudo.
+              Controla quais erros a Análise Inteligente de Erros considera. Apagar uma memória remove esse erro da análise, mas não apaga pontos, ranking, streaks nem histórico de respostas.
             </SheetDescription>
           </SheetHeader>
 
