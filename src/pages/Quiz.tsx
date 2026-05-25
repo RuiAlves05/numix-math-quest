@@ -51,10 +51,13 @@ const Quiz = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams();
   const { toast } = useToast();
-  const requestedLevel = (location.state as any)?.level as number | undefined;
+  const urlLevel = params.level ? Number(params.level) : undefined;
+  const stateLevel = (location.state as any)?.level as number | undefined;
+  const requestedLevel = urlLevel ?? stateLevel;
 
-  useEffect(() => { loadQuiz(); }, []);
+  useEffect(() => { loadQuiz(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlLevel]);
 
   const loadQuiz = async () => {
     try {
@@ -71,7 +74,18 @@ const Quiz = () => {
         progressData?.current_level || 1,
         getLevelFromCorrectAnswers(progressData?.questions_completed || 0),
       );
-      const level = requestedLevel && requestedLevel <= maxLevel ? requestedLevel : maxLevel;
+
+      if (!requestedLevel || !Number.isInteger(requestedLevel) || requestedLevel < 1 || requestedLevel > 4) {
+        toast({ title: "Nível inválido", description: "Escolhe um nível válido.", variant: "destructive" });
+        navigate("/dashboard");
+        return;
+      }
+      if (requestedLevel > maxLevel) {
+        toast({ title: "Nível bloqueado", description: "Ainda não desbloqueaste este nível.", variant: "destructive" });
+        navigate("/dashboard");
+        return;
+      }
+      const level = requestedLevel;
       setUserLevel(level);
 
       const { data: stats } = await supabase
