@@ -84,18 +84,34 @@ export const PrivateChat = ({ conversationId, friendId, friendName, friendAvatar
         ) : messages.map((m, i) => {
           const isOwn = m.sender_id === meId;
           const prev = messages[i - 1];
-          // Show sender info when first message in a run from this sender
           const showSenderInfo = !prev || prev.sender_id !== m.sender_id;
+          const d = new Date(m.created_at);
+          const prevD = prev ? new Date(prev.created_at) : null;
+          const sameDay = prevD && d.toDateString() === prevD.toDateString();
+          let dayLabel: string | null = null;
+          if (!sameDay) {
+            const today = new Date();
+            const yest = new Date(); yest.setDate(today.getDate() - 1);
+            if (d.toDateString() === today.toDateString()) dayLabel = "Hoje";
+            else if (d.toDateString() === yest.toDateString()) dayLabel = "Ontem";
+            else dayLabel = d.toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" });
+          }
           return (
-            <MessageBubble
-              key={m.id}
-              body={m.body}
-              createdAt={m.created_at}
-              isOwn={isOwn}
-              showSenderInfo={showSenderInfo}
-              senderName={m.sender_display_name}
-              senderAvatar={m.sender_avatar_url}
-            />
+            <div key={m.id}>
+              {dayLabel && (
+                <div className="flex items-center justify-center my-3">
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{dayLabel}</span>
+                </div>
+              )}
+              <MessageBubble
+                body={m.body}
+                createdAt={m.created_at}
+                isOwn={isOwn}
+                showSenderInfo={showSenderInfo}
+                senderName={m.sender_display_name}
+                senderAvatar={m.sender_avatar_url}
+              />
+            </div>
           );
         })}
       </div>
