@@ -271,7 +271,7 @@ const Quiz = () => {
           <CardHeader>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">{currentQuestion.category}</span>
-              <span className="text-xs font-medium text-accent bg-accent/10 px-3 py-1 rounded-full">{currentQuestion.points} pts base</span>
+              <span className="text-xs font-medium text-accent bg-accent/10 px-3 py-1 rounded-full">{sessionBasePoints} pts base</span>
             </div>
             <CardTitle className="text-2xl">{currentQuestion.question_text}</CardTitle>
           </CardHeader>

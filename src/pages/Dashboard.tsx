@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Flame, BookOpen, LogOut, Medal, Users } from "lucide-react";
+import { Trophy, Flame, BookOpen, LogOut, Medal, Users, Coins } from "lucide-react";
 import logoImage from "@/assets/img.png";
 import { getRank, getYearName, RANKS } from "@/lib/ranks";
 import { getLevelFromCorrectAnswers, getLevelProgress } from "@/lib/progression";
@@ -21,6 +21,7 @@ interface Profile {
   level: number;
   total_points: number;
   streak_days: number;
+  coins: number;
 }
 
 interface UserProgress {
@@ -114,6 +115,10 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold text-primary">Numix</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-yellow-400/50 bg-yellow-400/10 text-sm font-semibold text-yellow-600">
+              <Coins className="w-4 h-4" />
+              <span>{profile?.coins ?? 0}</span>
+            </div>
             <Button onClick={() => navigate("/social")} variant="outline" size="sm">
               <Users className="w-4 h-4 mr-2" />Social
             </Button>
