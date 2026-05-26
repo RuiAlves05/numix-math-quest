@@ -48,6 +48,8 @@ const Quiz = () => {
   const [userLevel, setUserLevel] = useState(1);
   const [streak, setStreak] = useState(0);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionBasePoints, setSessionBasePoints] = useState<number>(40);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,6 +104,16 @@ const Quiz = () => {
 
       if (questionsData && (questionsData as any[]).length > 0) {
         setQuestions(questionsData as unknown as Question[]);
+
+        // Start quiz session (all-or-nothing scoring)
+        const { data: sessionData, error: sessionError } = await supabase.rpc(
+          "start_quiz_session" as any,
+          { _level: level }
+        );
+        if (sessionError) throw sessionError;
+        setSessionId((sessionData as any).session_id);
+        setSessionBasePoints((sessionData as any).base_points);
+        setStreak((sessionData as any).starting_streak);
       } else {
         toast({ title: "Sem perguntas disponíveis", description: "Não há perguntas para o teu nível.", variant: "destructive" });
       }
@@ -121,7 +133,8 @@ const Quiz = () => {
     const prevStreak = streak;
 
     try {
-      const { data, error } = await supabase.rpc("submit_answer" as any, {
+      const { data, error } = await supabase.rpc("submit_session_answer" as any, {
+        _session_id: sessionId,
         _question_id: currentQuestion.id,
         _user_answer: answer,
       });
@@ -148,14 +161,39 @@ const Quiz = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setLastResult(null);
     } else {
-      toast({ title: "Quiz Completo!", description: `Ganhaste ${score} pontos!` });
+      try {
+        const { data: completeData, error: completeError } = await supabase.rpc(
+          "complete_quiz_session" as any,
+          { _session_id: sessionId }
+        );
+        if (completeError) throw completeError;
+        const result = completeData as any;
+        const totalPoints = result.total_points_earned ?? score;
+        if (result.new_level_unlocked) {
+          toast({
+            title: "🎉 Novo nível desbloqueado!",
+            description: `Parabéns! Subiste de nível! Ganhaste ${totalPoints} pontos neste quiz.`,
+          });
+        } else {
+          toast({
+            title: "Quiz Completo! 🏆",
+            description: `Ganhaste ${totalPoints} pontos!`,
+          });
+        }
+      } catch (e: any) {
+        toast({
+          title: "Erro ao guardar resultados",
+          description: e.message,
+          variant: "destructive",
+        });
+      }
       navigate("/dashboard");
     }
   };
@@ -179,7 +217,7 @@ const Quiz = () => {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const streakInfo = getStreakInfo(streak);
   const previewMult = previewMultiplier(streak);
-  const possiblePoints = Math.round((currentQuestion.points || 10) * previewMult);
+  const possiblePoints = Math.round(sessionBasePoints * previewMult);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">

@@ -307,6 +307,96 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_session_answers: {
+        Row: {
+          answered_at: string
+          base_points: number
+          id: string
+          is_correct: boolean
+          multiplier: number
+          points_earned: number
+          question_id: string
+          running_streak: number
+          session_id: string
+          user_answer: string
+        }
+        Insert: {
+          answered_at?: string
+          base_points: number
+          id?: string
+          is_correct: boolean
+          multiplier: number
+          points_earned: number
+          question_id: string
+          running_streak: number
+          session_id: string
+          user_answer: string
+        }
+        Update: {
+          answered_at?: string
+          base_points?: number
+          id?: string
+          is_correct?: boolean
+          multiplier?: number
+          points_earned?: number
+          question_id?: string
+          running_streak?: number
+          session_id?: string
+          user_answer?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_session_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_session_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sessions: {
+        Row: {
+          base_points: number
+          completed_at: string | null
+          id: string
+          level: number
+          max_level: number
+          started_at: string
+          starting_streak: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          base_points?: number
+          completed_at?: string | null
+          id?: string
+          level: number
+          max_level: number
+          started_at?: string
+          starting_streak?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          base_points?: number
+          completed_at?: string | null
+          id?: string
+          level?: number
+          max_level?: number
+          started_at?: string
+          starting_streak?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tutor_error_memory: {
         Row: {
           cleared_at: string | null
@@ -507,6 +597,7 @@ export type Database = {
         Args: { _error_type: string; _level?: number; _topic?: string }
         Returns: undefined
       }
+      complete_quiz_session: { Args: { _session_id: string }; Returns: Json }
       delete_all_notifications: { Args: never; Returns: undefined }
       delete_notification: {
         Args: { _notification_id: string }
@@ -691,8 +782,17 @@ export type Database = {
         Args: { _body: string; _conversation_id: string }
         Returns: Json
       }
+      start_quiz_session: { Args: { _level: number }; Returns: Json }
       submit_answer: {
         Args: { _question_id: string; _user_answer: string }
+        Returns: Json
+      }
+      submit_session_answer: {
+        Args: {
+          _question_id: string
+          _session_id: string
+          _user_answer: string
+        }
         Returns: Json
       }
       unblock_user: { Args: { _target: string }; Returns: Json }
