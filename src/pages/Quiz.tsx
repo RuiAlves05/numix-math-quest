@@ -48,6 +48,8 @@ const Quiz = () => {
   const [userLevel, setUserLevel] = useState(1);
   const [streak, setStreak] = useState(0);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionBasePoints, setSessionBasePoints] = useState<number>(40);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
