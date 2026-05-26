@@ -161,14 +161,39 @@ const Quiz = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setLastResult(null);
     } else {
-      toast({ title: "Quiz Completo!", description: `Ganhaste ${score} pontos!` });
+      try {
+        const { data: completeData, error: completeError } = await supabase.rpc(
+          "complete_quiz_session" as any,
+          { _session_id: sessionId }
+        );
+        if (completeError) throw completeError;
+        const result = completeData as any;
+        const totalPoints = result.total_points_earned ?? score;
+        if (result.new_level_unlocked) {
+          toast({
+            title: "🎉 Novo nível desbloqueado!",
+            description: `Parabéns! Subiste de nível! Ganhaste ${totalPoints} pontos neste quiz.`,
+          });
+        } else {
+          toast({
+            title: "Quiz Completo! 🏆",
+            description: `Ganhaste ${totalPoints} pontos!`,
+          });
+        }
+      } catch (e: any) {
+        toast({
+          title: "Erro ao guardar resultados",
+          description: e.message,
+          variant: "destructive",
+        });
+      }
       navigate("/dashboard");
     }
   };
