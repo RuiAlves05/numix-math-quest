@@ -176,6 +176,8 @@ const Quiz = () => {
         if (completeError) throw completeError;
         const result = completeData as any;
         const totalPoints = result.total_points_earned ?? score;
+        const coinsEarned = result.coins_earned ?? 0;
+
         if (result.new_level_unlocked) {
           toast({
             title: "🎉 Novo nível desbloqueado!",
@@ -185,6 +187,13 @@ const Quiz = () => {
           toast({
             title: "Quiz Completo! 🏆",
             description: `Ganhaste ${totalPoints} pontos!`,
+          });
+        }
+
+        if (coinsEarned > 0) {
+          toast({
+            title: "🪙 Moedas ganhas!",
+            description: `Recebeste ${coinsEarned} moeda${coinsEarned === 1 ? "" : "s"}!`,
           });
         }
       } catch (e: any) {
