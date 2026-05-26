@@ -217,7 +217,7 @@ const Quiz = () => {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const streakInfo = getStreakInfo(streak);
   const previewMult = previewMultiplier(streak);
-  const possiblePoints = Math.round((currentQuestion.points || 10) * previewMult);
+  const possiblePoints = Math.round(sessionBasePoints * previewMult);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
