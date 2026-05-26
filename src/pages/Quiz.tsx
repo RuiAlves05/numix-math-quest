@@ -104,6 +104,16 @@ const Quiz = () => {
 
       if (questionsData && (questionsData as any[]).length > 0) {
         setQuestions(questionsData as unknown as Question[]);
+
+        // Start quiz session (all-or-nothing scoring)
+        const { data: sessionData, error: sessionError } = await supabase.rpc(
+          "start_quiz_session" as any,
+          { _level: level }
+        );
+        if (sessionError) throw sessionError;
+        setSessionId((sessionData as any).session_id);
+        setSessionBasePoints((sessionData as any).base_points);
+        setStreak((sessionData as any).starting_streak);
       } else {
         toast({ title: "Sem perguntas disponíveis", description: "Não há perguntas para o teu nível.", variant: "destructive" });
       }
