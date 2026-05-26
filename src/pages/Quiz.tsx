@@ -133,7 +133,8 @@ const Quiz = () => {
     const prevStreak = streak;
 
     try {
-      const { data, error } = await supabase.rpc("submit_answer" as any, {
+      const { data, error } = await supabase.rpc("submit_session_answer" as any, {
+        _session_id: sessionId,
         _question_id: currentQuestion.id,
         _user_answer: answer,
       });
