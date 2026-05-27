@@ -36,6 +36,8 @@ const Social = () => {
   const { toast } = useToast();
   const [meId, setMeId] = useState<string>("");
   const [tab, setTab] = useState("friends");
+  const [myClanId, setMyClanId] = useState<string | null>(null);
+  const [clanName, setClanName] = useState<string>("");
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendReq[]>([]);
