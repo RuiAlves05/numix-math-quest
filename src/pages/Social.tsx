@@ -58,6 +58,9 @@ const Social = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
       setMeId(session.user.id);
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam) setTab(tabParam);
     })();
   }, [navigate]);
 
