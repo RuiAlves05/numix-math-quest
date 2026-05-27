@@ -14,6 +14,7 @@ import { PrivateChat } from "@/components/social/PrivateChat";
 import { Mailbox, type Notif } from "@/components/social/Mailbox";
 import { FriendRequests, type FriendReq } from "@/components/social/FriendRequests";
 import { BlockedUsers, type Blocked } from "@/components/social/BlockedUsers";
+import { ClanGroupChat } from "@/components/social/ClanGroupChat";
 
 const initial = (name: string) => (name?.trim()?.[0] || "U").toUpperCase();
 
@@ -35,6 +36,8 @@ const Social = () => {
   const { toast } = useToast();
   const [meId, setMeId] = useState<string>("");
   const [tab, setTab] = useState("friends");
+  const [myClanId, setMyClanId] = useState<string | null>(null);
+  const [clanName, setClanName] = useState<string>("");
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendReq[]>([]);
@@ -55,22 +58,32 @@ const Social = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
       setMeId(session.user.id);
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam) setTab(tabParam);
     })();
   }, [navigate]);
 
   const loadAll = useCallback(async () => {
-    const [f, r, m, c, b] = await Promise.all([
+    const [f, r, m, c, b, cl] = await Promise.all([
       supabase.rpc("get_friends" as any),
       supabase.rpc("list_friend_requests" as any),
       supabase.rpc("get_mailbox" as any),
       supabase.rpc("list_conversations" as any),
       supabase.rpc("get_blocked_users" as any),
+      supabase.rpc("get_my_clan" as any),
     ]);
     setFriends((f.data as Friend[]) || []);
     setRequests((r.data as FriendReq[]) || []);
     setNotifs((m.data as Notif[]) || []);
     setConvs((c.data as Conv[]) || []);
     setBlocked((b.data as Blocked[]) || []);
+    if (cl.data) {
+      setMyClanId((cl.data as any).clan.id);
+      setClanName((cl.data as any).clan.name);
+    } else {
+      setMyClanId(null);
+    }
   }, []);
 
   useEffect(() => { if (meId) loadAll(); }, [meId, loadAll]);
@@ -161,12 +174,13 @@ const Social = () => {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full h-auto">
+        <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full h-auto">
           <TabsTrigger value="friends">Amigos {friends.length > 0 && <Badge variant="secondary" className="ml-1">{friends.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="requests">Pedidos {pendingReceived > 0 && <Badge variant="default" className="ml-1">{pendingReceived}</Badge>}</TabsTrigger>
           <TabsTrigger value="mail">Correio {unreadNotifs > 0 && <Badge variant="default" className="ml-1">{unreadNotifs}</Badge>}</TabsTrigger>
           <TabsTrigger value="search">Pesquisar</TabsTrigger>
           <TabsTrigger value="chat">Chat {totalUnreadMsgs > 0 && <Badge variant="default" className="ml-1">{totalUnreadMsgs}</Badge>}</TabsTrigger>
+          {myClanId && <TabsTrigger value="clan">Chat do Clã</TabsTrigger>}
           <TabsTrigger value="blocked">Bloqueados</TabsTrigger>
         </TabsList>
 
@@ -243,8 +257,15 @@ const Social = () => {
           )}
         </TabsContent>
 
+        {myClanId && (
+          <TabsContent value="clan" className="mt-4">
+            <ClanGroupChat clanId={myClanId} clanName={clanName} meId={meId} />
+          </TabsContent>
+        )}
+
         <TabsContent value="blocked" className="mt-4">
           <BlockedUsers blocked={blocked} onChange={loadAll} />
+
         </TabsContent>
       </Tabs>
 

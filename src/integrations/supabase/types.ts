@@ -14,6 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
+      clan_join_requests: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_join_requests_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_mail: {
+        Row: {
+          clan_id: string
+          content: Json
+          created_at: string
+          expires_at: string
+          id: string
+          is_read: boolean
+          triggered_by: string | null
+          type: string
+        }
+        Insert: {
+          clan_id: string
+          content?: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_read?: boolean
+          triggered_by?: string | null
+          type: string
+        }
+        Update: {
+          clan_id?: string
+          content?: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_read?: boolean
+          triggered_by?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_mail_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_members: {
+        Row: {
+          clan_id: string
+          competition_points: number
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          competition_points?: number
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          competition_points?: number
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_messages: {
+        Row: {
+          body: string
+          clan_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          clan_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          clan_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_messages_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clans: {
+        Row: {
+          created_at: string
+          emblem: string
+          id: string
+          leader_id: string
+          motto: string
+          name: string
+          recruitment_status: string
+          tag: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emblem?: string
+          id?: string
+          leader_id: string
+          motto?: string
+          name: string
+          recruitment_status?: string
+          tag: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emblem?: string
+          id?: string
+          leader_id?: string
+          motto?: string
+          name?: string
+          recruitment_status?: string
+          tag?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           blocked_at: string | null
@@ -590,6 +769,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _add_clan_mail: {
+        Args: {
+          _clan_id: string
+          _content: Json
+          _triggered_by?: string
+          _type: string
+        }
+        Returns: undefined
+      }
       _are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       _is_blocked_either: { Args: { _a: string; _b: string }; Returns: boolean }
       block_user: { Args: { _target: string }; Returns: Json }
@@ -601,9 +789,17 @@ export type Database = {
         Returns: undefined
       }
       complete_quiz_session: { Args: { _session_id: string }; Returns: Json }
+      create_clan: {
+        Args: { _motto: string; _name: string; _tag: string }
+        Returns: Json
+      }
       delete_all_notifications: { Args: never; Returns: undefined }
       delete_notification: {
         Args: { _notification_id: string }
+        Returns: undefined
+      }
+      demote_to_member: {
+        Args: { _target_user_id: string }
         Returns: undefined
       }
       get_blocked_users: {
@@ -613,6 +809,18 @@ export type Database = {
           blocked_at: string
           display_name: string
           user_id: string
+        }[]
+      }
+      get_clan_mail: { Args: never; Returns: Json }
+      get_clan_messages: {
+        Args: never
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          sender_avatar_url: string
+          sender_display_name: string
+          sender_id: string
         }[]
       }
       get_conversation_messages: {
@@ -691,6 +899,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_my_clan: { Args: never; Returns: Json }
       get_or_create_conversation: { Args: { _friend: string }; Returns: Json }
       get_random_quiz_questions: {
         Args: { _level: number }
@@ -729,6 +938,12 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      join_clan: { Args: { _clan_id: string }; Returns: Json }
+      kick_clan_member: {
+        Args: { _target_user_id: string }
+        Returns: undefined
+      }
+      leave_clan: { Args: never; Returns: undefined }
       list_conversations: {
         Args: never
         Returns: {
@@ -756,6 +971,7 @@ export type Database = {
         }[]
       }
       mark_all_notifications_read: { Args: never; Returns: undefined }
+      mark_clan_mail_read: { Args: never; Returns: undefined }
       mark_conversation_read: {
         Args: { _conversation_id: string }
         Returns: undefined
@@ -764,11 +980,20 @@ export type Database = {
         Args: { _notification_id: string }
         Returns: undefined
       }
+      promote_to_officer: {
+        Args: { _target_user_id: string }
+        Returns: undefined
+      }
       remove_friend: { Args: { _friend: string }; Returns: Json }
       respond_friend_request: {
         Args: { _action: string; _request_id: string }
         Returns: Json
       }
+      respond_to_join_request: {
+        Args: { _accept: boolean; _request_id: string }
+        Returns: Json
+      }
+      search_clans: { Args: { _query?: string }; Returns: Json }
       search_users: {
         Args: { _term: string }
         Returns: {
@@ -780,6 +1005,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      send_clan_message: { Args: { _body: string }; Returns: Json }
       send_friend_request: { Args: { _target: string }; Returns: Json }
       send_message: {
         Args: { _body: string; _conversation_id: string }
@@ -798,9 +1024,18 @@ export type Database = {
         }
         Returns: Json
       }
+      transfer_leadership: {
+        Args: { _target_user_id: string }
+        Returns: undefined
+      }
       unblock_user: { Args: { _target: string }; Returns: Json }
       undo_block_user: { Args: { _action_id: string }; Returns: Json }
       undo_remove_friend: { Args: { _action_id: string }; Returns: Json }
+      update_clan_profile: {
+        Args: { _motto: string; _name: string; _tag: string }
+        Returns: undefined
+      }
+      update_clan_recruitment: { Args: { _status: string }; Returns: undefined }
       upsert_tutor_error_memory: {
         Args: {
           _category?: string

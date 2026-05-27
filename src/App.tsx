@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Quiz from "./pages/Quiz";
 import Social from "./pages/Social";
+import Clans from "./pages/Clans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/quiz/:level" element={<Quiz />} />
           <Route path="/social" element={<Social />} />
+          <Route path="/clans" element={<Clans />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
