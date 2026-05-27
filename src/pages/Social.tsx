@@ -257,8 +257,15 @@ const Social = () => {
           )}
         </TabsContent>
 
+        {myClanId && (
+          <TabsContent value="clan" className="mt-4">
+            <ClanGroupChat clanId={myClanId} clanName={clanName} meId={meId} />
+          </TabsContent>
+        )}
+
         <TabsContent value="blocked" className="mt-4">
           <BlockedUsers blocked={blocked} onChange={loadAll} />
+
         </TabsContent>
       </Tabs>
 
