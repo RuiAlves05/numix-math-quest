@@ -65,18 +65,25 @@ const Social = () => {
   }, [navigate]);
 
   const loadAll = useCallback(async () => {
-    const [f, r, m, c, b] = await Promise.all([
+    const [f, r, m, c, b, cl] = await Promise.all([
       supabase.rpc("get_friends" as any),
       supabase.rpc("list_friend_requests" as any),
       supabase.rpc("get_mailbox" as any),
       supabase.rpc("list_conversations" as any),
       supabase.rpc("get_blocked_users" as any),
+      supabase.rpc("get_my_clan" as any),
     ]);
     setFriends((f.data as Friend[]) || []);
     setRequests((r.data as FriendReq[]) || []);
     setNotifs((m.data as Notif[]) || []);
     setConvs((c.data as Conv[]) || []);
     setBlocked((b.data as Blocked[]) || []);
+    if (cl.data) {
+      setMyClanId((cl.data as any).clan.id);
+      setClanName((cl.data as any).clan.name);
+    } else {
+      setMyClanId(null);
+    }
   }, []);
 
   useEffect(() => { if (meId) loadAll(); }, [meId, loadAll]);
