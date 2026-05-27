@@ -14,6 +14,7 @@ import { PrivateChat } from "@/components/social/PrivateChat";
 import { Mailbox, type Notif } from "@/components/social/Mailbox";
 import { FriendRequests, type FriendReq } from "@/components/social/FriendRequests";
 import { BlockedUsers, type Blocked } from "@/components/social/BlockedUsers";
+import { ClanGroupChat } from "@/components/social/ClanGroupChat";
 
 const initial = (name: string) => (name?.trim()?.[0] || "U").toUpperCase();
 
