@@ -122,6 +122,9 @@ const Dashboard = () => {
             <Button onClick={() => navigate("/social")} variant="outline" size="sm">
               <Users className="w-4 h-4 mr-2" />Social
             </Button>
+            <Button onClick={() => navigate("/clans")} variant="outline" size="sm">
+              <Shield className="w-4 h-4 mr-2" />Clãs
+            </Button>
             <TutorMemorySettings />
             {userId && <ProfileSettings userId={userId} onSaved={checkUser} />}
             <Button onClick={handleSignOut} variant="outline" size="sm">
