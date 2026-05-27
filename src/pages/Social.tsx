@@ -174,12 +174,13 @@ const Social = () => {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full h-auto">
+        <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full h-auto">
           <TabsTrigger value="friends">Amigos {friends.length > 0 && <Badge variant="secondary" className="ml-1">{friends.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="requests">Pedidos {pendingReceived > 0 && <Badge variant="default" className="ml-1">{pendingReceived}</Badge>}</TabsTrigger>
           <TabsTrigger value="mail">Correio {unreadNotifs > 0 && <Badge variant="default" className="ml-1">{unreadNotifs}</Badge>}</TabsTrigger>
           <TabsTrigger value="search">Pesquisar</TabsTrigger>
           <TabsTrigger value="chat">Chat {totalUnreadMsgs > 0 && <Badge variant="default" className="ml-1">{totalUnreadMsgs}</Badge>}</TabsTrigger>
+          {myClanId && <TabsTrigger value="clan">Chat do Clã</TabsTrigger>}
           <TabsTrigger value="blocked">Bloqueados</TabsTrigger>
         </TabsList>
 
